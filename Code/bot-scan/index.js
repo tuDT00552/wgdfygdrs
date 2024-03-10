@@ -13,7 +13,7 @@ const DriverStatus = {
     BUSY: 'BUSY'
 };
 const countTab = 4;
-let name = 'THỬ NGHIỆM BOT 2 - ';
+let name = '';
 sendMessage('Đang chạy')
 
 find();
