@@ -1,0 +1,17 @@
+{
+  "name": "goetheq1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index-proxy-live.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chromedriver": "^109",
+    "axios": "^1.5.1",
+    "selenium-webdriver": "^4.13.0"
+  }
+}
