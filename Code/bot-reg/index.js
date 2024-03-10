@@ -59,8 +59,8 @@ async function setupWebDriver(isReload) {
     options.addArguments([
         '--window-size=1500,1500',
         '--disable-notifications',
-        'force-device-scale-factor=0.7',
-        'high-dpi-support=0.7',
+        'force-device-scale-factor=0.3',
+        'high-dpi-support=0.3',
         '--disable-cache',
         '--disk-cache-size=1',
         `--user-agent=${new userAgent({ deviceCategory: 'desktop' }).toString()}`
