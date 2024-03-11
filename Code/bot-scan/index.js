@@ -135,8 +135,8 @@ function randomComparator() {
 }
 
 async function fetchDataFromApi() {
+    let randomDelay = Math.floor(Math.random() * (6000 - 3000 + 1)) + 3000;
     try {
-        let randomDelay = Math.floor(Math.random() * (6000 - 3000 + 1)) + 3000;
         const response = await axios.get(apiUrl, { timeout: 5000 });
         const data = response.data;
         const recordsWithData = data.DATA.filter(record => record.buttonLink);
