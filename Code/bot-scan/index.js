@@ -136,7 +136,8 @@ function randomComparator() {
 
 async function fetchDataFromApi() {
     try {
-        const response = await axios.get(apiUrl, { timeout: 3000 });
+        let randomDelay = Math.floor(Math.random() * (6000 - 3000 + 1)) + 3000;
+        const response = await axios.get(apiUrl, { timeout: 5000 });
         const data = response.data;
         const recordsWithData = data.DATA.filter(record => record.buttonLink);
         if (recordsWithData.length > 0) {
@@ -155,9 +156,9 @@ async function fetchDataFromApi() {
                 }
             }
         }
-        setTimeout(fetchDataFromApi, 2000);
+        setTimeout(fetchDataFromApi, randomDelay);
     } catch (error) {
-        setTimeout(fetchDataFromApi, 2000);
+        setTimeout(fetchDataFromApi, randomDelay);
     }
 }
 
