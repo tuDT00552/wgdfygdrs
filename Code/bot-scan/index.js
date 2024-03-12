@@ -186,7 +186,6 @@ async function fetchDataFromApi() {
         }
         setTimeout(fetchDataFromApi, randomDelay);
     } catch (error) {
-        console.log(error)
         setTimeout(fetchDataFromApi, randomDelay);
     }
 }
