@@ -12,6 +12,7 @@ const DriverStatus = {
     READY: 'READY',
     BUSY: 'BUSY'
 };
+let proxies = [];
 const countTab = 4;
 let name = '';
 sendMessage('Đang chạy')
@@ -134,35 +135,64 @@ function randomComparator() {
     return Math.random() - 0.5;
 }
 
-async function fetchDataFromApi() {
-    let randomDelay = Math.floor(Math.random() * (6000 - 3000 + 1)) + 3000;
+async function fetchProxy() {
     try {
-        const response = await axios.get(apiUrl, { timeout: 5000 });
-        const data = response.data;
-        const recordsWithData = data.DATA.filter(record => record.buttonLink);
-        if (recordsWithData.length > 0) {
-            for (let i = 0; i < drivers.length; i++) {
-                let driverObj = drivers[i];
-                let driver = driverObj.driver;
-                let status = driverObj.status;
-                if (status === DriverStatus.READY) {
-                    const randomIndex = Math.floor(Math.random() * recordsWithData.length);
-                    const randomRecord = recordsWithData[randomIndex];
-                    const buttonLink = createNewUrl(randomRecord);
-                    const eventTimeSpan = randomRecord.eventTimeSpan || 'Không có thông tin về thời gian';
-                    driverObj.status = DriverStatus.BUSY;
-                    createAndManageSession(driver, buttonLink, randomRecord.startDate, eventTimeSpan);
-                    drivers.splice(i, 1);
+        const response = await axios.get(`http://52.220.227.223:3000/api/get-proxy`);
+        if (response && response?.data) {
+            proxies = response.data.map((item) => item.proxy);
+        }
+    } catch (error) {
+        throw new Error('Đã xảy ra lỗi khi tải JSON: ' + error.message);
+    }
+}
+
+async function fetchDataFromApi() {
+    let randomDelay = Math.floor(Math.random() * (4000 - 2000 + 1)) + 2000;
+    try {
+        if (proxies.length > 0) {
+            let randomProxy = proxies[Math.floor(Math.random() * proxies.length)];
+            const response = await axios.get(apiUrl, {
+                proxy: {
+                    protocol: 'http',
+                    host: randomProxy.split(':')[0],
+                    port: randomProxy.split(':')[1],
+                    auth: {
+                        username: randomProxy.split(':')[2],
+                        password: randomProxy.split(':')[3]
+                    }
+                },
+                timeout: 4000
+            });
+            const data = response.data;
+            const recordsWithData = data.DATA.filter(record => record.buttonLink);
+            if (recordsWithData.length > 0) {
+                for (let i = 0; i < drivers.length; i++) {
+                    let driverObj = drivers[i];
+                    let driver = driverObj.driver;
+                    let status = driverObj.status;
+                    if (status === DriverStatus.READY) {
+                        const randomIndex = Math.floor(Math.random() * recordsWithData.length);
+                        const randomRecord = recordsWithData[randomIndex];
+                        const buttonLink = createNewUrl(randomRecord);
+                        const eventTimeSpan = randomRecord.eventTimeSpan || 'Không có thông tin về thời gian';
+                        driverObj.status = DriverStatus.BUSY;
+                        createAndManageSession(driver, buttonLink, randomRecord.startDate, eventTimeSpan);
+                        drivers.splice(i, 1);
+                    }
                 }
             }
+        } else {
+            console.log('KHONG CO PROXYYYYYYYYYYYYYYYYYYYYYYYY')
         }
         setTimeout(fetchDataFromApi, randomDelay);
     } catch (error) {
+        console.log(error)
         setTimeout(fetchDataFromApi, randomDelay);
     }
 }
 
 fetchDataFromApi();
+fetchProxy();
 
 function createNewUrl(record) {
     if (record.hasOwnProperty("oid") && record.buttonLink.includes("prod")) {
@@ -181,7 +211,7 @@ async function openUrlAndReload() {
         await driver.get('https://www.goethe.de/ins/vn/vi/sta/han/prf/gzb1.cfm');
         await driver.wait(until.elementLocated(By.xpath('/html/body/div[1]/div[4]/div[1]/div[1]/article/div/div[4]')), 10000);
         await clickShadowRootButton(driver, 60000);
-        driver.sleep(3000);
+        driver.sleep(20000);
         drivers.push({ driver: driver, status: DriverStatus.READY });
     } catch (error) {
         if (driver) {
