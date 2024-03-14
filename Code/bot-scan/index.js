@@ -65,6 +65,11 @@ async function setupWebDriver(isProxy) {
         .forBrowser('chrome')
         .setChromeOptions(options)
         .build();
+    const screenWidth = await driver.executeScript('return window.screen.width;');
+    const screenHeight = await driver.executeScript('return window.screen.height;');
+    const randomX = Math.floor(Math.random() * Math.min(screenWidth, 1280));
+    const randomY = Math.floor(Math.random() * Math.min(screenHeight, 960));
+    await driver.manage().window().setRect({ x: randomX, y: randomY });
     return driver;
 }
 
@@ -161,7 +166,7 @@ async function fetchDataFromApi() {
                         password: randomProxy.split(':')[3]
                     }
                 },
-                timeout: 4000
+                timeout: 3000
             });
             const data = response.data;
             const recordsWithData = data.DATA.filter(record => record.buttonLink);
@@ -184,9 +189,9 @@ async function fetchDataFromApi() {
         } else {
             console.log('KHONG CO PROXYYYYYYYYYYYYYYYYYYYYYYYY')
         }
-        setTimeout(fetchDataFromApi, randomDelay);
+        setTimeout(fetchDataFromApi, 2000);
     } catch (error) {
-        setTimeout(fetchDataFromApi, randomDelay);
+        setTimeout(fetchDataFromApi, 2000);
     }
 }
 
