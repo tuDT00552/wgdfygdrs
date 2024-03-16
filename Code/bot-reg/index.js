@@ -70,6 +70,11 @@ async function setupWebDriver(isReload) {
         .forBrowser('chrome')
         .setChromeOptions(options)
         .build();
+    const screenWidth = await driver.executeScript('return window.screen.width;');
+    const screenHeight = await driver.executeScript('return window.screen.height;');
+    const randomX = Math.floor(Math.random() * Math.min(screenWidth, 1280));
+    const randomY = Math.floor(Math.random() * Math.min(screenHeight, 960));
+    await driver.manage().window().setRect({ x: randomX, y: randomY });
     return driver;
 }
 
