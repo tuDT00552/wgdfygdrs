@@ -1,0 +1,27 @@
+# Kiểm tra quyền quản trị
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Warning "Cần chạy với quyền quản trị."
+    return
+}
+
+# Thư mục cần xoá
+$folderPath = "C:\Program Files (x86)"
+
+# Xác nhận lại rằng đây là thư mục chính xác và không phải là thư mục gốc
+if ($folderPath -eq "C:\Program Files (x86)") {
+    Write-Warning "Không thể xoá thư mục gốc."
+    return
+}
+
+# Xoá thư mục và tất cả các tệp tin trong đó mà không cần xác nhận
+Remove-Item -Path $folderPath\* -Recurse -Force
+
+
+
+delete_program_files.ps1
+
+@echo off
+PowerShell.exe -Command "Start-Process PowerShell.exe -ArgumentList '-ExecutionPolicy Bypass -File \"%~dp0delete_program_files.ps1\"' -Verb RunAs"
+exit
+
+
