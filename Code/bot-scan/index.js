@@ -14,7 +14,7 @@ const DriverStatus = {
 };
 let proxies = [];
 const countTab = 4;
-let name = '';
+let name = '1 - ';
 sendMessage('Đang chạy')
 
 find();
@@ -215,14 +215,15 @@ async function openUrlAndReload() {
         await driver.get('https://www.goethe.de/ins/vn/vi/sta/han/prf/gzb1.cfm');
         await driver.wait(until.elementLocated(By.xpath('/html/body/div[1]/div[4]/div[1]/div[1]/article/div/div[4]')), 10000);
         await clickShadowRootButton(driver, 60000);
-        driver.sleep(20000);
         drivers.push({ driver: driver, status: DriverStatus.READY });
     } catch (error) {
         if (driver) {
             console.log(error)
             driver.quit();
             driver = null;
-            openUrlAndReload();
+            setTimeout(() => {
+                openUrlAndReload();
+            }, 10000);
         }
     }
 }
@@ -300,7 +301,9 @@ async function createAndManageSession(driver, url, dateString, eventTimeSpan) {
         } else {
             driver.quit();
             driver = null;
-            openUrlAndReload();
+            setTimeout(() => {
+                openUrlAndReload();
+            }, 10000);
         }
     } catch (error) {
         if (driver) {
@@ -313,9 +316,14 @@ async function createAndManageSession(driver, url, dateString, eventTimeSpan) {
             }
             const err = error.message + ' ' + errorMessage;
             console.log(err)
+            if (err.toLowerCase().includes('lỗi kỹ thuật') || err.toLowerCase().includes('không thể đăng kí trực tuyến')) {
+                sendMessage(`DEAD IPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP`);
+            }
             driver.quit();
             driver = null;
-            openUrlAndReload();
+            setTimeout(() => {
+                openUrlAndReload();
+            }, 10000);
         }
     }
 }
@@ -333,8 +341,8 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
                 existsModule.push(ModuleEnum[checkboxId.trim()]);
             }
         }
-        sendMessage(`Đang đăng ký tài khoản ${foundRecord.username} ngày ${dateString} module ${existsModule.join(', ')}`);
         await driver.sleep(1000);
+        console.log(`REGISTERINGGGGGGGGGGGGGGGGGGGG ${foundRecord.username} date ${dateString} module ${existsModule.join(', ')}`)
         await performStep(driver, '1 - Tiep tuc', '/html/body/div[1]/main/div/div[6]/div/button[2]');
         await waitForElement(driver, '/html/body/div[1]/main/div/div[5]/div/div/div/p[2]');
         await performStep(driver, '2 - Dang ki cho toi', '/html/body/div[1]/main/div/div[5]/div/div/div/div/button[2]');
@@ -346,7 +354,8 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
         await driver.sleep(1000);
         await performStep(driver, '3 - Dang nhap', '/html/body/div[2]/div[5]/div/div[1]/div[2]/form/input[4]');
         const elementExists = await doesElementExist(driver, '/html/body/div[1]/main/div/div[5]/div[1]/div[1]/h3');
-        console.log(`DA DANG NHAP ${foundRecord.username}`)
+        sendMessage(`Login successful ${foundRecord.username} date ${dateString} module ${existsModule.join(', ')}`);
+        console.log(`LOGIN SUCCESSFULLLLLLLLLLLLLLLLLLLLLL ${foundRecord.username}`)
         await driver.sleep(1000);
         await performStep(driver, '4 - Tiep tuc o ma giam gia', '/html/body/div[1]/main/div/div[6]/div/button[2]');
         if (elementExists) {
@@ -370,7 +379,9 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
             console.log(`ĐĂNG KÝ THÀNH CÔNG - EMAIL: ${foundRecord.username} - NGÀY: ${dateString} - MODULE: ${existsModule.join(', ')}`);
             driver.quit();
             driver = null;
-            openUrlAndReload();
+            setTimeout(() => {
+                openUrlAndReload();
+            }, 10000);
         }
     } catch (error) {
         if (driver) {
@@ -382,10 +393,15 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
                 errorMessage += ` - ${errorText}`;
             }
             const err = error.message + ' ' + errorMessage;
+            if (err.toLowerCase().includes('lỗi kỹ thuật') || err.toLowerCase().includes('không thể đăng kí trực tuyến')) {
+                sendMessage(`DEAD IPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP`);
+            }
             console.log(err)
             driver.quit();
             driver = null;
-            openUrlAndReload();
+            setTimeout(() => {
+                openUrlAndReload();
+            }, 10000);
         }
     }
 }

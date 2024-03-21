@@ -173,7 +173,11 @@ async function openUrlAndReload(isReload, config) {
         if (driver) {
             driver.quit();
             driver = null;
-            if (config) openUrlAndReload(true, config);
+            if (config) {
+                setTimeout(() => {
+                    openUrlAndReload(true, config);
+                }, 10000);
+            }
         }
     }
 }
@@ -245,7 +249,11 @@ async function createAndManageSession(driver, enabledButton) {
             } else {
                 driver.quit();
                 driver = null;
-                if (config) openUrlAndReload(true, config);
+                if (config) {
+                    setTimeout(() => {
+                        openUrlAndReload(true, config);
+                    }, 10000);
+                }
             }
 
         }
@@ -264,8 +272,8 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
             existsModule.push(ModuleEnum[checkboxId.trim()]);
         }
     }
-    sendMessage(`Đang đăng ký tài khoản ${foundRecord.username}`);
-    await driver.sleep(1000);
+    await driver.sleep(2000);
+    console.log(`REGISTERINGGGGGGGGGGGGGGGGGGGG ${foundRecord.username} date ${dateString} module ${existsModule.join(', ')}`)
     await performStep(driver, '1 - Tiep tuc', '/html/body/div[1]/main/div/div[6]/div/button[2]');
     await waitForElement(driver, '/html/body/div[1]/main/div/div[5]/div/div/div/p[2]');
     await performStep(driver, '2 - Dang ki cho toi', '/html/body/div[1]/main/div/div[5]/div/div/div/div/button[2]');
@@ -276,7 +284,8 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
     await passwordInput.sendKeys(foundRecord.password);
     await performStep(driver, '3 - Dang nhap', '/html/body/div[2]/div[5]/div/div[1]/div[2]/form/input[4]');
     const elementExists = await doesElementExist(driver, '/html/body/div[1]/main/div/div[5]/div[1]/div[1]/h3');
-    console.log(`DA DANG NHAP ${foundRecord.username}`)
+    sendMessage(`Login successful ${foundRecord.username} date ${dateString} module ${existsModule.join(', ')}`);
+    console.log(`LOGIN SUCCESSFULLLLLLLLLLLLLLLLLLLLLL ${foundRecord.username}`)
     await performStep(driver, '4 - Tiep tuc o ma giam gia', '/html/body/div[1]/main/div/div[6]/div/button[2]');
     if (elementExists) {
         await driver.sleep(1500);
