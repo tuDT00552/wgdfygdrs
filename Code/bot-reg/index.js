@@ -175,8 +175,8 @@ async function openUrlAndReload(isReload, config) {
             driver = null;
             if (config) {
                 setTimeout(() => {
-                    openUrlAndReload(true, config);
-                }, 10000);
+                    openUrlAndReload();
+                }, 25000);
             }
         }
     }
@@ -251,8 +251,8 @@ async function createAndManageSession(driver, enabledButton) {
                 driver = null;
                 if (config) {
                     setTimeout(() => {
-                        openUrlAndReload(true, config);
-                    }, 10000);
+                        openUrlAndReload();
+                    }, 25000);
                 }
             }
 
