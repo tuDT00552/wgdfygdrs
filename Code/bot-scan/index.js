@@ -223,7 +223,7 @@ async function openUrlAndReload() {
             driver = null;
             setTimeout(() => {
                 openUrlAndReload();
-            }, 25000);
+            }, 30000);
         }
     }
 }
@@ -303,7 +303,7 @@ async function createAndManageSession(driver, url, dateString, eventTimeSpan) {
             driver = null;
             setTimeout(() => {
                 openUrlAndReload();
-            }, 25000);
+            }, 30000);
         }
     } catch (error) {
         if (driver) {
@@ -323,7 +323,7 @@ async function createAndManageSession(driver, url, dateString, eventTimeSpan) {
             driver = null;
             setTimeout(() => {
                 openUrlAndReload();
-            }, 25000);
+            }, 30000);
         }
     }
 }
@@ -381,7 +381,7 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
             driver = null;
             setTimeout(() => {
                 openUrlAndReload();
-            }, 25000);
+            }, 30000);
         }
     } catch (error) {
         if (driver) {
@@ -401,7 +401,7 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
             driver = null;
             setTimeout(() => {
                 openUrlAndReload();
-            }, 25000);
+            }, 30000);
         }
     }
 }
