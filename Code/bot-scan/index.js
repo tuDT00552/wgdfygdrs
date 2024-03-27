@@ -152,7 +152,6 @@ async function fetchProxy() {
 }
 
 async function fetchDataFromApi() {
-    let randomDelay = Math.floor(Math.random() * (4000 - 2000 + 1)) + 2000;
     try {
         if (proxies.length > 0) {
             let randomProxy = proxies[Math.floor(Math.random() * proxies.length)];
@@ -189,9 +188,9 @@ async function fetchDataFromApi() {
         } else {
             console.log('KHONG CO PROXYYYYYYYYYYYYYYYYYYYYYYYY')
         }
-        setTimeout(fetchDataFromApi, 2000);
+        setTimeout(fetchDataFromApi, 1000);
     } catch (error) {
-        setTimeout(fetchDataFromApi, 2000);
+        setTimeout(fetchDataFromApi, 1000);
     }
 }
 
