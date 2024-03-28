@@ -157,16 +157,16 @@ async function fetchDataFromApi() {
             const randomUserAgent = new userAgent({ deviceCategory: 'desktop' }).toString();
             let randomProxy = proxies[Math.floor(Math.random() * proxies.length)];
             const response = await axios.get(apiUrl, {
-                proxy: {
-                    protocol: 'http',
-                    host: randomProxy.split(':')[0],
-                    port: randomProxy.split(':')[1],
-                    auth: {
-                        username: randomProxy.split(':')[2],
-                        password: randomProxy.split(':')[3]
-                    }
-                },
-                timeout: 3000,
+                // proxy: {
+                //     protocol: 'http',
+                //     host: randomProxy.split(':')[0],
+                //     port: randomProxy.split(':')[1],
+                //     auth: {
+                //         username: randomProxy.split(':')[2],
+                //         password: randomProxy.split(':')[3]
+                //     }
+                // },
+                timeout: 5000,
                 headers: {
                     'User-Agent': randomUserAgent,
                     'Accept-Language': 'en-US,en;q=0.9',
@@ -196,9 +196,9 @@ async function fetchDataFromApi() {
         } else {
             console.log('KHONG CO PROXYYYYYYYYYYYYYYYYYYYYYYYY')
         }
-        setTimeout(fetchDataFromApi, 1000);
+        setTimeout(fetchDataFromApi, 3000);
     } catch (error) {
-        setTimeout(fetchDataFromApi, 1000);
+        setTimeout(fetchDataFromApi, 3000);
     }
 }
 
