@@ -6,18 +6,11 @@ const chrome = require('selenium-webdriver/chrome');
 const axios = require('axios');
 const countTab = 4;
 let config;
-let drivers = [];
-const DriverStatus = {
-    READY: 'READY',
-    BUSY: 'BUSY'
-};
-let proxies = [];
+sendMessage('Đang chạy')
 
 async function find() {
-    await fetchProxy();
     const c = await getConfig();
     config = c;
-    fetchDataFromApi(true);
     for (let i = 0; i < countTab; i++) {
         openUrlAndReload(false, config);
     }
@@ -43,76 +36,6 @@ async function getConfig() {
     }
 }
 
-async function fetchProxy() {
-    try {
-        const response = await axios.get(`http://52.220.227.223:3000/api/get-proxy`);
-        if (response && response?.data) {
-            proxies = response.data.map((item) => item.proxy);
-        }
-    } catch (error) {
-        throw new Error('Đã xảy ra lỗi khi tải JSON: ' + error.message);
-    }
-}
-
-async function fetchDataFromApi(isFirst = false) {
-    let apiUrl = `https://www.goethe.de/rest/examfinder/exams/institute/O%2010000610?category=E006&type=ER&countryIsoCode=&locationName=&count=${config ? config.count : 20}&start=${config ? config.skip : 1}&langId=134&timezone=54&isODP=0&sortField=startDate&sortOrder=ASC&dataMode=0&langIsoCodes=de%2Cen%2Cvi`;
-    try {
-        if (config) {
-            if (proxies.length > 0) {
-                let randomProxy = proxies[Math.floor(Math.random() * proxies.length)];
-                const response = await axios.get(apiUrl, {
-                    proxy: {
-                        protocol: 'http',
-                        host: randomProxy.split(':')[0],
-                        port: randomProxy.split(':')[1],
-                        auth: {
-                            username: randomProxy.split(':')[2],
-                            password: randomProxy.split(':')[3]
-                        }
-                    },
-                    timeout: 3000
-                });
-                const data = response.data;
-                if (data.DATA.length > 0 && isFirst) {
-                    const first = data.DATA[0];
-                    sendMessage(`${first.eventTimeSpan} - ${first.availabilityText.replace(`<br/>`, ' ')}`)
-                    isFirst = false;
-                }
-                const record = data.DATA.find(record => record.buttonLink);
-                if (record) {
-                    const buttonLink = createNewUrl(record);
-                    for (let i = 0; i < drivers.length; i++) {
-                        let driverObj = drivers[i];
-                        let driver = driverObj.driver;
-                        let status = driverObj.status;
-                        if (status === DriverStatus.READY) {
-                            const eventTimeSpan = record.eventTimeSpan || 'Không có thông tin về thời gian';
-                            driverObj.status = DriverStatus.BUSY;
-                            findExamButton(driver, buttonLink, eventTimeSpan);
-                            drivers.splice(i, 1);
-                        }
-                    }
-                }
-            } else {
-                console.log('KHONG CO PROXYYYYYYYYYYYYYYYYYYYYYYYY')
-            }
-        }
-        setTimeout(fetchDataFromApi, 1000);
-    } catch (error) {
-        setTimeout(fetchDataFromApi, 1000);
-    }
-}
-
-function createNewUrl(record) {
-    if (record.hasOwnProperty("oid") && record.buttonLink.includes("prod")) {
-        let langParam = record.buttonLink.includes('?lang=vi') ? 'lang=vi&' : '';
-        let newUrl = `${record.buttonLink.split('?')[0]}?${langParam}oid=${record.oid}`;
-        return record.buttonLink = newUrl;
-    } else {
-        return record.buttonLink;
-    }
-}
-
 function sendMessage(message) {
     axios.get(`http://52.220.227.223:3001/send-message?message=${message}`)
         .then(response => {
@@ -131,7 +54,7 @@ async function doesElementExist(driver, xpath) {
     }
 }
 
-async function setupWebDriver() {
+async function setupWebDriver(isReload) {
     let options = new chrome.Options();
     options.addArguments([
         '--window-size=1500,1500',
@@ -216,24 +139,45 @@ async function getTextFromCsLayerText(driver) {
     return texts;
 }
 
-async function openUrlAndReload() {
-    let driver
+async function openUrlAndReload(isReload, config) {
+    let driver;
     try {
-        driver = await setupWebDriver();
+        driver = await setupWebDriver(isReload);
         await driver.get('https://www.goethe.de/ins/vn/vi/sta/han/prf/gzb1.cfm');
         await driver.wait(until.elementLocated(By.xpath('/html/body/div[1]/div[4]/div[1]/div[1]/article/div/div[4]')), 10000);
         await clickShadowRootButton(driver, 60000);
-        setTimeout(() => {
-            drivers.push({ driver: driver, status: DriverStatus.READY });
-        }, 5000);
+        await driver.sleep(2000);
+        await driver.executeScript(`examfinderDataCF_7629595.countPerPage = '${config ? config.count : 20}';`);
+        await driver.executeScript(`
+            const prFinder = document.querySelector('.pr-finder');
+            if (prFinder) {
+                prFinder.style.position = 'fixed';
+                prFinder.style.top = 0;
+                prFinder.style.bottom = 0;
+                prFinder.style.left = 0;
+                prFinder.style.right = 0;
+                prFinder.style.zIndex = 999;
+            }
+        `);
+        let enabledButton;
+        while (!enabledButton) {
+            await driver.executeScript(`getData_7629595(${config ? config.skip : 1})`);
+            await driver.sleep(1000);
+            enabledButton = await findEnabledButtonInTd(driver);
+            if (enabledButton) {
+                await createAndManageSession(driver, enabledButton);
+            }
+        }
+
     } catch (error) {
         if (driver) {
-            console.log(error)
             driver.quit();
             driver = null;
-            setTimeout(() => {
-                openUrlAndReload();
-            }, 25000);
+            if (config) {
+                setTimeout(() => {
+                    openUrlAndReload();
+                }, 25000);
+            }
         }
     }
 }
@@ -248,36 +192,7 @@ async function findEnabledButtonInTd(driver) {
     }
 }
 
-async function findExamButton(driver, url, eventTimeSpan) {
-    let buttonId = "btn-" + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    await driver.executeScript(`
-        let divElement = document.createElement('div');
-        divElement.classList.add("pr-buttons"); // Thêm lớp "pr-buttons" vào thẻ div
-
-        let virtualButton = document.createElement('button');
-        virtualButton.id = "${buttonId}";
-        virtualButton.textContent = "LỰA CHỌN CÁC MÔ ĐUN";
-        virtualButton.classList.add("standard", "btnGruen", "icon-double-arrow-right");
-        virtualButton.addEventListener("click", function () {
-            let url = "${url}";
-            window.open(url, "_self");
-        });
-
-        divElement.appendChild(virtualButton);
-
-        let cfheadlineElement = document.getElementById("cfheadline");
-        cfheadlineElement.appendChild(divElement);
-    `);
-    let enabledButton;
-    while (!enabledButton) {
-        enabledButton = await findEnabledButtonInTd(driver);
-        if (enabledButton) {
-            await createAndManageSession(enabledButton, driver, url, eventTimeSpan);
-        }
-    }
-}
-
-async function createAndManageSession(enabledButton, driver, url, eventTimeSpan) {
+async function createAndManageSession(driver, enabledButton) {
     const ModuleEnum = {
         reading: 'Đọc',
         writing: 'Viết',
@@ -309,10 +224,10 @@ async function createAndManageSession(enabledButton, driver, url, eventTimeSpan)
                 let backupModuleExists = backupModules.every(module => existsCheckbox.includes(module));
                 if (moduleExists) {
                     foundRecord = record;
-                    await register(driver, checkboxes, record, "module", ModuleEnum, existsModule, eventTimeSpan);
+                    await register(driver, checkboxes, record, "module", ModuleEnum, existsModule);
                 } else if (backupModuleExists) {
                     foundRecord = record;
-                    await register(driver, checkboxes, record, "moduleBackup", ModuleEnum, existsModule, eventTimeSpan);
+                    await register(driver, checkboxes, record, "moduleBackup", ModuleEnum, existsModule);
                 }
             } else {
                 foundRecord1 = null;
@@ -345,7 +260,7 @@ async function createAndManageSession(enabledButton, driver, url, eventTimeSpan)
     }
 }
 
-async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum, existsModule, dateString) {
+async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum, existsModule) {
     for (const checkbox of checkboxes) {
         const checkboxId = await checkbox.getAttribute('id');
         if (!foundRecord[propModule].split(',').includes(checkboxId.trim())) {
@@ -358,7 +273,7 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
         }
     }
     await driver.sleep(2000);
-    console.log(`REGISTERINGGGGGGGGGGGGGGGGGGGG ${foundRecord.username} date ${dateString} module ${existsModule.join(', ')}`)
+    console.log(`REGISTERINGGGGGGGGGGGGGGGGGGGG ${foundRecord.username} module ${existsModule.join(', ')}`)
     await performStep(driver, '1 - Tiep tuc', '/html/body/div[1]/main/div/div[6]/div/button[2]');
     await waitForElement(driver, '/html/body/div[1]/main/div/div[5]/div/div/div/p[2]');
     await performStep(driver, '2 - Dang ki cho toi', '/html/body/div[1]/main/div/div[5]/div/div/div/div/button[2]');
@@ -369,7 +284,7 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
     await passwordInput.sendKeys(foundRecord.password);
     await performStep(driver, '3 - Dang nhap', '/html/body/div[2]/div[5]/div/div[1]/div[2]/form/input[4]');
     const elementExists = await doesElementExist(driver, '/html/body/div[1]/main/div/div[5]/div[1]/div[1]/h3');
-    sendMessage(`Login successful ${foundRecord.username} date ${dateString} module ${existsModule.join(', ')}`);
+    sendMessage(`Login successful ${foundRecord.username} module ${existsModule.join(', ')}`);
     console.log(`LOGIN SUCCESSFULLLLLLLLLLLLLLLLLLLLLL ${foundRecord.username}`)
     await performStep(driver, '4 - Tiep tuc o ma giam gia', '/html/body/div[1]/main/div/div[6]/div/button[2]');
     if (elementExists) {
@@ -387,7 +302,7 @@ async function register(driver, checkboxes, foundRecord, propModule, ModuleEnum,
         console.log(`${foundRecord.username} Đã nhấn hoàn thành`)
         await waitForElement(driver, '/html/body/div[1]/main/div/div[5]/div[1]/div[1]/p');
         await axios.get(`http://52.220.227.223:3000/api/users/update?id=${foundRecord.id}&isActive=0`);
-        sendMessage(`ĐĂNG KÝ THÀNH CÔNG - EMAIL: ${foundRecord.username} - NGÀY: ${dateString} - MODULE: ${existsModule.join(', ')}&isDone=true`);
-        console.log(`ĐĂNG KÝ THÀNH CÔNG - EMAIL: ${foundRecord.username} - NGÀY: ${dateString} - MODULE: ${existsModule.join(', ')}`);
+        sendMessage(`ĐĂNG KÝ THÀNH CÔNG - EMAIL: ${foundRecord.username} - MODULE: ${existsModule.join(', ')}&isDone=true`);
+        console.log(`ĐĂNG KÝ THÀNH CÔNG - EMAIL: ${foundRecord.username} - MODULE: ${existsModule.join(', ')}`);
     }
 }

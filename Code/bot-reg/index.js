@@ -59,6 +59,7 @@ async function fetchDataFromApi(isFirst = false) {
     try {
         if (config) {
             if (proxies.length > 0) {
+                const randomUserAgent = new userAgent({ deviceCategory: 'desktop' }).toString();
                 let randomProxy = proxies[Math.floor(Math.random() * proxies.length)];
                 const response = await axios.get(apiUrl, {
                     proxy: {
@@ -70,7 +71,14 @@ async function fetchDataFromApi(isFirst = false) {
                             password: randomProxy.split(':')[3]
                         }
                     },
-                    timeout: 3000
+                    timeout: 3000,
+                    headers: {
+                        'User-Agent': randomUserAgent,
+                        'Accept-Language': 'en-US,en;q=0.9',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'keep-alive',
+                        'Cache-Control': 'no-cache',
+                    }
                 });
                 const data = response.data;
                 if (data.DATA.length > 0 && isFirst) {
